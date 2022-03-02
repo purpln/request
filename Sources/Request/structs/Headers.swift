@@ -1,16 +1,16 @@
 public struct Headers: ExpressibleByDictionaryLiteral {
-    public var value: [AnyHashable: Any]
+    public var value: [String: String]
     
-    public init(value: [AnyHashable: Any] = [:]) {
+    public init(value: [String: String] = [:]) {
         self.value = value
     }
     
-    public init(dictionaryLiteral elements: (AnyHashable, Any)...) {
+    public init(dictionaryLiteral elements: (String, String)...) {
         self.init()
         elements.forEach { tuple in update(tuple) }
     }
     
-    mutating func update(_ tuple: (key: AnyHashable, value: Any)) {
+    mutating func update(_ tuple: (key: String, value: String)) {
         value[tuple.key] = tuple.value
     }
 }
@@ -20,5 +20,5 @@ public extension Headers {
 }
 
 extension Headers {
-    public static func custom(_ value: [AnyHashable: Any]) -> Self { .init(value: value) }
+    public static func custom(_ value: [String: String]) -> Self { .init(value: value) }
 }
