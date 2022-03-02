@@ -1,4 +1,4 @@
-public struct Headers: ExpressibleByDictionaryLiteral {
+public struct Query: ExpressibleByDictionaryLiteral {
     public var value: [AnyHashable: Any]
     
     public init(value: [AnyHashable: Any] = [:]) {
@@ -15,10 +15,10 @@ public struct Headers: ExpressibleByDictionaryLiteral {
     }
 }
 
-public extension Headers {
+public extension Query {
     static var none: Self { [:] }
 }
 
-extension Headers {
+extension Query {
     public static func custom(_ value: [AnyHashable: Any]) -> Self { .init(value: value) }
 }

@@ -1,6 +1,10 @@
 public struct Links: Equatable, ExpressibleByStringLiteral {
     public var value: String
     
+    public init(value: String = "") {
+        self.value = value
+    }
+    
     public init(stringLiteral value: String) {
         self.value = value.first == "/" ? value : "/" + value
     }

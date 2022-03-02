@@ -1,6 +1,10 @@
 public struct Ports: Equatable, ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
     public var value: String
     
+    public init(value: String = "") {
+        self.value = value
+    }
+    
     public init(stringLiteral value: String) {
         self.value = value.first == ":" ? value : ":" + value
     }
