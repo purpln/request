@@ -11,7 +11,7 @@ public struct Headers: ExpressibleByDictionaryLiteral {
     }
     
     mutating func update(_ tuple: (key: String, value: String)) {
-        print(tuple.key, tuple.value)
+        value[tuple.key] = tuple.value
     }
 }
 
