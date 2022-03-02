@@ -6,8 +6,8 @@
 //    var error: Response.Error?
 //    var data: Data?
 //    var headers: [AnyHashable: Any]?
-//    
+//
 //    struct Error {
-//        
+//
 //    }
 //}

@@ -2,10 +2,10 @@
 //
 //class Request {
 //    var host: String?
-//    var headers: [String:String]?
-//    var method: Methods = .get
+//    var headers: Headers = .none
 //    var `protocol`: Protocols = .https
 //    var port: Ports = .none
+//    var method: Methods = .get
 //    //var link: Links = .none
 //    var query: [String: Any]?
 //    //var body: Request.Body?
@@ -27,7 +27,7 @@
 //        return self
 //    }
 //    @discardableResult public
-//    func headers(_ headers: [String:String]?) -> Self {
+//    func headers(_ headers: Headers) -> Self {
 //        self.headers = headers
 //        return self
 //    }
