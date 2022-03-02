@@ -1,14 +1,14 @@
-public class Request {
-    public var host: Hosts = .none
-    public var headers: Headers = .none
-    public var `protocol`: Protocols = .none
-    public var port: Ports = .none
-    public var link: Links = .none
-    public var query: Query = .none
-    public var method: Methods = .none
-    public var body: Body = .none
+open class Request {
+    open var host: Hosts = .none
+    open var headers: Headers = .none
+    open var `protocol`: Protocols = .none
+    open var port: Ports = .none
+    open var link: Links = .none
+    open var query: Query = .none
+    open var method: Methods = .none
+    open var body: Body = .none
     
-    public var response: ((Response) -> Void)?
+    open var response: ((Response) -> Void)?
     
     public init() { }
 }
