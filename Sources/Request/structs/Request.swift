@@ -8,7 +8,9 @@ public struct Request {
     public var method: Methods = .none
     public var body: Body = .none
     
-    var response: ((Response) -> Void)?
+    public var response: ((Response) -> Void)?
+    
+    public init() { }
 }
 
 extension Request: CustomStringConvertible {
