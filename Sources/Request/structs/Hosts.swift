@@ -6,7 +6,7 @@ public struct Hosts: Equatable, ExpressibleByStringLiteral {
     }
     
     public init(stringLiteral value: String) {
-        self.value = value.first == "/" ? value : "/" + value
+        self.value = value
     }
 }
 
