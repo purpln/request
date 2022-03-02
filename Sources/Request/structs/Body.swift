@@ -13,7 +13,7 @@ public extension Body {
 }
 
 extension Body {
-    public init(data: [UInt8], file: String, name: String, type: String = "image/jpeg") {
+    public init(data: [UInt8], file: String, name: String, type: String) {
         let uuid: String = .uuid
         var value: [UInt8] = []
         value.append(contentsOf: [UInt8]("\r\n--\(uuid)\r\n".utf8) )
