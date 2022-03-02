@@ -13,6 +13,14 @@ public struct Query: ExpressibleByDictionaryLiteral {
     mutating func update(_ tuple: (key: AnyHashable, value: Any)) {
         value[tuple.key] = tuple.value
     }
+    
+    public var query: String {
+        var string = "?"
+        value.forEach { key, value in
+            string += "\(key)=\(value)&"
+        }
+        return String(string.dropLast())
+    }
 }
 
 public extension Query {
