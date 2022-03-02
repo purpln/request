@@ -3,6 +3,13 @@ public struct Response {
     public var error: [Error]?
     public var data: [UInt8]?
     public var headers: [AnyHashable: Any]?
+    
+    public init(code: Int, error: [Error]? = nil, data: [UInt8]? = nil, headers: [AnyHashable: Any]? = nil) {
+        self.code = code
+        self.error = error
+        self.data = data
+        self.headers = headers
+    }
 }
 
 public extension Response {

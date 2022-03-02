@@ -10,7 +10,7 @@ public struct Ports: Equatable, ExpressibleByStringLiteral, ExpressibleByInteger
     }
     
     public init(integerLiteral value: Int) {
-        self.value = String(value)
+        self = .custom(String(value))
     }
 }
 
