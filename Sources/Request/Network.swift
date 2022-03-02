@@ -8,7 +8,7 @@ class Network: NSObject {
             guard let resp = resp as? HTTPURLResponse else { return }
             var response = Response(code: resp.statusCode)
             if let data = data { response.data = [UInt8](data) }
-            response.headers = resp.allHeaderFields
+            response.headers = resp.allHeaderFields.reduce(into: [String:Any](), { $0[String(describing: $1.key)] = $1.value })
             
             DispatchQueue.main.async { if let completion = req.response { completion(response) } }
         }

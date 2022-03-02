@@ -2,9 +2,9 @@ public struct Response {
     public var code: Int
     public var error: [Error]?
     public var data: [UInt8]?
-    public var headers: [AnyHashable: Any]
+    public var headers: [String: Any]
     
-    public init(code: Int, error: [Error]? = nil, data: [UInt8]? = nil, headers: [AnyHashable: Any] = [:]) {
+    public init(code: Int, error: [Error]? = nil, data: [UInt8]? = nil, headers: [String: Any] = [:]) {
         self.code = code
         self.error = error
         self.data = data
