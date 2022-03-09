@@ -6,7 +6,7 @@ public struct Ports: Equatable, ExpressibleByStringLiteral, ExpressibleByInteger
     }
     
     public init(stringLiteral value: String) {
-        self.value = value.first == ":" ? value : ":" + value
+        self.value = value.count > 0 ? (value.first == ":" ? value : ":" + value) : value
     }
     
     public init(integerLiteral value: Int) {
