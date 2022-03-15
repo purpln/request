@@ -1,59 +1,57 @@
 open class Request {
-    open var host: Hosts = .none
-    open var headers: Headers = .none
-    open var `protocol`: Protocols = .none
-    open var port: Ports = .none
-    open var link: Links = .none
-    open var query: Query = .none
-    open var method: Methods = .none
+    open var url: url = .init()
+    open var header: [String: String]?
+    open var method: String?
     open var body: Body = .none
-    
     open var response: ((Response) -> Void)?
     
     public init() { }
 }
 
 extension Request: CustomStringConvertible {
-    public var url: String { `protocol`.value + host.value + port.value + link.value + query.query }
-    public var description: String { "<req \(`protocol`.value)\(host.value)>" }
+    public var description: String { "<req \(url.description)>" }
 }
 
 public extension Request {
-    @discardableResult func host(_ host: Hosts) -> Self {
-        self.host = host
+    @discardableResult func url(_ value: url) -> Self {
+        url = value
         return self
     }
-    @discardableResult func headers(_ headers: Headers) -> Self {
-        self.headers = headers
+    @discardableResult func header(_ value: HeaderProtocol) -> Self {
+        header = value.header
         return self
     }
-    @discardableResult func `protocol`(_ protocol: Protocols) -> Self {
-        self.protocol = `protocol`
+    @discardableResult func method(_ value: MethodProtocol) -> Self {
+        method = value.method
         return self
     }
-    @discardableResult func port(_ port: Ports) -> Self {
-        self.port = port
+    @discardableResult func body(_ value: Body) -> Self {
+        body = value
         return self
     }
-    @discardableResult func link(_ link: Links) -> Self {
-        self.link = link
-        return self
-    }
-    @discardableResult func query(_ query: Query) -> Self {
-        self.query = query
-        return self
-    }
-    @discardableResult func method(_ method: Methods) -> Self {
-        self.method = method
-        return self
-    }
-    @discardableResult func response(_ response: @escaping (Response) -> Void) -> Self {
-        self.response = response
+    @discardableResult func response(_ closure: @escaping (Response) -> Void) -> Self {
+        response = closure
         return self
     }
     
-    @discardableResult func body(_ body: Body) -> Self {
-        self.body = body
+    @discardableResult func scheme(_ value: SchemeProtocol) -> Self {
+        url.scheme(value.scheme)
+        return self
+    }
+    @discardableResult func host(_ value: HostProtocol) -> Self {
+        url.host(value.host)
+        return self
+    }
+    @discardableResult func port(_ value: PortProtocol) -> Self {
+        url.port(value.port)
+        return self
+    }
+    @discardableResult func path(_ value: PathProtocol) -> Self {
+        url.path(value.path)
+        return self
+    }
+    @discardableResult func query(_ value: QueryProtocol) -> Self {
+        url.query(value.query)
         return self
     }
 }

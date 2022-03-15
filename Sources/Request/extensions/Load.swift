@@ -2,7 +2,7 @@ import Foundation
 
 extension Request {
     public var request: URLRequest? {
-        var url = url
+        guard var url = url.value else { return nil }
         
         if let new = url.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) {
             url = new.replacingOccurrences(of: "+", with: "%2B")
@@ -11,10 +11,10 @@ extension Request {
         guard let link = URL(string: url) else { return nil }
         var request = URLRequest(url: link)
         
-        if method != .none { request.httpMethod = method.value }
-        headers.value.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key)}
+        if let method = method { request.httpMethod = method }
+        header?.forEach { request.addValue($0.value, forHTTPHeaderField: $0.key)}
         
-        guard body != .none, method != .get, method != .none else { return request }
+        guard body != .none, method != "GET", method != "" else { return request }
         
         if body.boundary == "" {
             request.httpBody = .init(body.data)

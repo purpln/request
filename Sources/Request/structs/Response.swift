@@ -26,4 +26,22 @@ public extension Response {
             self.description = description
         }
     }
+    
+    struct Pagination {
+        public var current: Int?
+        public var previous: Int?
+        public var next: Int?
+        public var per_page: Int?
+        public var pages: Int?
+        public var count: Int?
+        
+        public static func map(_ data: [String: Any]) -> Pagination {
+            Pagination(current: data["current"] as? Int,
+                       previous: data["previous"] as? Int,
+                       next: data["next"] as? Int,
+                       per_page: data["per_page"] as? Int,
+                       pages: data["pages"] as? Int,
+                       count: data["count"] as? Int)
+        }
+    }
 }
