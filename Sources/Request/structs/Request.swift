@@ -17,12 +17,12 @@ public extension Request {
         url = value
         return self
     }
-    @discardableResult func header(_ value: HeaderProtocol) -> Self {
-        header = value.header
+    @discardableResult func header(_ header: Header) -> Self {
+        self.header = header.value
         return self
     }
-    @discardableResult func method(_ value: MethodProtocol) -> Self {
-        method = value.method
+    @discardableResult func method(_ method: Method) -> Self {
+        self.method = method.value
         return self
     }
     @discardableResult func body(_ value: Body) -> Self {
@@ -34,24 +34,24 @@ public extension Request {
         return self
     }
     
-    @discardableResult func scheme(_ value: SchemeProtocol) -> Self {
-        url.scheme(value.scheme)
+    @discardableResult func scheme(_ scheme: Scheme) -> Self {
+        url.scheme(scheme.value)
         return self
     }
-    @discardableResult func host(_ value: HostProtocol) -> Self {
-        url.host(value.host)
+    @discardableResult func host(_ host: Host) -> Self {
+        url.host(host.value)
         return self
     }
-    @discardableResult func port(_ value: PortProtocol) -> Self {
-        url.port(value.port)
+    @discardableResult func port(_ port: Port) -> Self {
+        url.port(port.value)
         return self
     }
-    @discardableResult func path(_ value: PathProtocol) -> Self {
-        url.path(value.path)
+    @discardableResult func path(_ path: Path) -> Self {
+        url.path(path.value)
         return self
     }
-    @discardableResult func query(_ value: QueryProtocol) -> Self {
-        url.query(value.query)
+    @discardableResult func query(_ query: Query) -> Self {
+        url.query(query.value)
         return self
     }
 }

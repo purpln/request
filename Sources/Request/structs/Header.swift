@@ -1,15 +1,9 @@
-public struct Header: ExpressibleByDictionaryLiteral, HeaderProtocol {
-    public var header: [String: String] = [:]
-    
+public struct Header: ExpressibleByDictionaryLiteral {
+    public var value: [String: String]
+    public init(value: [String: String] = [:]) { self.value = value }
     public init(dictionaryLiteral elements: (String, String)...) {
-        elements.forEach { key, value in header[key] = value }
+        self.init()
+        elements.forEach { key, value in self.value[key] = value }
     }
-}
-
-public protocol HeaderProtocol {
-    var header: [String: String]? { get }
-}
-extension Dictionary: HeaderProtocol { }
-public extension HeaderProtocol {
-    var header: [String : String]? { self as? [String : String] }
+    public static func custom(_ value: [String: String]) -> Self { .init(value: value) }
 }

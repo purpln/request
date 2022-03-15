@@ -1,12 +1,6 @@
-public struct Method: Equatable, ExpressibleByStringLiteral, MethodProtocol {
-    public var method: String?
-    public init(stringLiteral value: String) { method = value }
-}
-
-public protocol MethodProtocol {
-    var method: String? { get }
-}
-extension String: MethodProtocol { }
-public extension MethodProtocol {
-    var method: String? { self as? String }
+public struct Method: Equatable, ExpressibleByStringLiteral {
+    public var value: String
+    public init(value: String = "") { self.value = value }
+    public init(stringLiteral value: String) { self.value = value }
+    public static func custom(_ value: String) -> Self { .init(value: value) }
 }

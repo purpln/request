@@ -1,20 +1,9 @@
-public struct Port: ExpressibleByStringLiteral, ExpressibleByIntegerLiteral, PortProtocol {
-    public var port: UInt?
-    public init(stringLiteral value: String) { port = UInt(value) }
-    public init(integerLiteral value: Int) { port = UInt(value) }
-}
-
-public protocol PortProtocol {
-    var port: UInt? { get }
-}
-extension Int: PortProtocol { }
-extension UInt: PortProtocol { }
-extension String: PortProtocol { }
-public extension PortProtocol {
-    var port: UInt? {
-        if let value = self as? String { return UInt(value) }
-        if let value = self as? Int { return UInt(value) }
-        if let value = self as? UInt { return value }
-        return nil
-    }
+public struct Port: ExpressibleByStringLiteral, ExpressibleByIntegerLiteral {
+    public var value: UInt?
+    public init(value: UInt? = nil) { self.value = value }
+    public init(stringLiteral value: String) { self.value = UInt(value) }
+    public init(integerLiteral value: Int) { self.value = UInt(value) }
+    public static func custom(_ value: UInt) -> Self { .init(value: value) }
+    public static func custom(_ value: Int) -> Self { .init(value: UInt(value)) }
+    public static func custom(_ value: String) -> Self { .init(value: UInt(value)) }
 }

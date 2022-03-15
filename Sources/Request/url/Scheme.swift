@@ -1,12 +1,6 @@
-public struct Scheme: ExpressibleByStringLiteral, SchemeProtocol {
-    public var scheme: String?
-    public init(stringLiteral value: String) { scheme = value }
-}
-
-public protocol SchemeProtocol {
-    var scheme: String? { get }
-}
-extension String: SchemeProtocol { }
-public extension SchemeProtocol {
-    var scheme: String? { self as? String }
+public struct Scheme: ExpressibleByStringLiteral {
+    public var value: String
+    public init(value: String = "") { self.value = value }
+    public init(stringLiteral value: String = "") { self.value = value }
+    public static func custom(_ value: String) -> Self { .init(value: value) }
 }
