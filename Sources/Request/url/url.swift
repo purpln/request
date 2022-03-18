@@ -212,3 +212,91 @@ public extension url {
         return self
     }
 }
+
+
+public extension url {
+    init?(string: String) {
+        var components: Set<Component> = []
+        var string = string
+        let fragments = string.components(separatedBy: "#")
+        if fragments.count == 2, let fragment = fragments.last, let clean = fragments.first {
+            components.insert(.fragment(fragment))
+            string = clean
+        }
+        let query = string.components(separatedBy: "?")
+        if query.count == 2, let items = query.last?.components(separatedBy: "&").reduce(into: [String: String](), {
+            let values = $1.components(separatedBy: "=")
+            if values.count == 2, let key = values.first, let value = values.last {
+                $0[key] = value
+            }
+        }), let clean = query.first {
+            components.insert(.query(items))
+            string = clean
+        }
+        let authorization = string.components(separatedBy: "@")
+        if authorization.count == 2, let items = authorization.first?.components(separatedBy: "://"),
+           items.count == 2, let scheme = items.first, let values = items.last?.components(separatedBy: ":"),
+           let clean = authorization.last?.components(separatedBy: "/"), let address = clean.first?.components(separatedBy: ":") {
+            components.insert(.scheme(scheme))
+            if values.count == 2, let login = values.first, let password = values.last {
+                components.insert(.login(login))
+                components.insert(.password(password))
+            } else if values.count == 1, let value = values.first {
+                if value.contains(":") {
+                    let password = value.replacingOccurrences(of: ":", with: "")
+                    components.insert(.password(password))
+                } else {
+                    components.insert(.login(value))
+                }
+            } else { return nil }
+            if address.count == 2, let host = address.first, let value = address.last {
+                components.insert(.host(host))
+                if let port = UInt(String(value)) {
+                    components.insert(.port(port))
+                }
+            } else if address.count == 1, let host = address.first {
+                components.insert(.host(host))
+            } else { return nil }
+            var array = clean
+            if array.count > 0 {
+                array.removeFirst()
+                components.insert(.path(array))
+            }
+        } else if let items = authorization.first?.components(separatedBy: ":") {
+            
+            if items.count == 3, let scheme = items[safe: 0],
+               let host = items[safe: 1]?.replacingOccurrences(of: "//", with: ""), let values = items[safe: 2]?.components(separatedBy: "/") {
+                components.insert(.scheme(scheme))
+                components.insert(.host(host))
+                var array = values
+                if array.count > 0 {
+                    let value = array.removeFirst()
+                    if array != [] {
+                        components.insert(.path(array))
+                    }
+                    if let port = UInt(String(value)) {
+                        components.insert(.port(port))
+                    }
+                }
+            } else if items.count == 2, let scheme = items.first, let address = items.last {
+                components.insert(.scheme(scheme))
+                if Array(address)[safe: 0] == "/", Array(address)[safe: 1] == "/" {
+                    var array = address.replacingOccurrences(of: "//", with: "").components(separatedBy: "/")
+                    if array != [] {
+                        let host = array.removeFirst()
+                        components.insert(.host(host))
+                        if array != [] {
+                            components.insert(.path(array))
+                        }
+                    }
+                } else {
+                    let array = address.components(separatedBy: "/")
+                    if array != [] {
+                        components.insert(.path(array))
+                    }
+                } else { return nil }
+            } else { return nil }
+        } else { return nil }
+        self.init(components)
+    }
+}
