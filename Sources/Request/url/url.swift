@@ -294,7 +294,7 @@ public extension url {
                     if array != [] {
                         components.insert(.path(array))
                     }
-                } else { return nil }
+                }
             } else { return nil }
         } else { return nil }
         self.init(components)
