@@ -6,6 +6,9 @@ open class Request {
     open var response: ((Response) -> Void)?
     
     public init() { }
+    public init(_ response: @escaping (Response) -> Void) {
+        self.response = response
+    }
 }
 
 extension Request: CustomStringConvertible {

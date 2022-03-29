@@ -13,6 +13,7 @@ extension NetworkProtocol {
 open class Network: NSObject {
     public static var shared = Network()
     open var delegate: NetworkProtocol?
+    public static var timeout: Double = 60
     
     @discardableResult open
     class func load(req: Request) -> URLSessionDataTask? {
@@ -35,6 +36,42 @@ open class Network: NSObject {
         task.resume()
         return task
         
+    }
+    
+    class func load(_ reqs: [Request], _ closure: @escaping () -> Void) {
+        let group = DispatchGroup()
+        
+        DispatchQueue.global(qos: .background).async {
+            for req in reqs {
+                guard let request = req.request else { continue }
+                group.enter()
+                let sessionConfig = URLSessionConfiguration.default
+                sessionConfig.timeoutIntervalForRequest = timeout
+                sessionConfig.timeoutIntervalForResource = timeout
+                let session = URLSession(configuration: sessionConfig)
+                let task = session.dataTask(with: request) { data, resp, error in
+                    guard let resp = resp as? HTTPURLResponse else { return }
+                    var response = Response(code: resp.statusCode)
+                    if let data = data { response.data = [UInt8](data) }
+                    response.headers = resp.allHeaderFields.reduce(into: [String:Any](), { $0[String(describing: $1.key)] = $1.value })
+                    
+                    if response.headers.count != resp.allHeaderFields.count {
+                        print("network error parsing headers")
+                        print(response.headers)
+                        print(resp.allHeaderFields)
+                    }
+                    
+                    if let completion = req.response { completion(response) }
+                    group.leave()
+                }
+                task.resume()
+                group.wait()
+            }
+            
+            group.notify(queue: .main) {
+                closure()
+            }
+        }
     }
 }
 
