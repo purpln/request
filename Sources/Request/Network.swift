@@ -38,7 +38,7 @@ open class Network: NSObject {
         
     }
     
-    class func load(reqs: [Request], _ closure: (() -> Void)? = nil) {
+    open class func load(reqs: [Request], _ closure: (() -> Void)? = nil) {
         let group = DispatchGroup()
         
         DispatchQueue.global(qos: .background).async {
