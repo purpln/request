@@ -38,7 +38,7 @@ open class Network: NSObject {
         
     }
     
-    class func load(_ reqs: [Request], _ closure: @escaping () -> Void) {
+    class func load(reqs: [Request], _ closure: (() -> Void)? = nil) {
         let group = DispatchGroup()
         
         DispatchQueue.global(qos: .background).async {
@@ -69,7 +69,7 @@ open class Network: NSObject {
             }
             
             group.notify(queue: .main) {
-                closure()
+                closure?()
             }
         }
     }
