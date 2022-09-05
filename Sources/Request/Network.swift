@@ -49,9 +49,11 @@ open class Network: NSObject {
     
     open class func load(reqs: [Request], _ closure: (() -> Void)? = nil) {
         let group = DispatchGroup()
+        
         DispatchQueue.global(qos: .background).async {
             for req in reqs {
                 guard let request = req.request else { return }
+                group.enter()
                 let task = URLSession(configuration: config).dataTask(with: request) { data, resp, error in
                     guard let response = response(data, resp, error) else { return }
                     if let completion = req.response { completion(response) }
