@@ -35,7 +35,7 @@ open class Network: NSObject {
             let current = CFAbsoluteTimeGetCurrent()
             guard let response = beautifier(data, resp, error) else { return }
             let count = response.data?.count ?? 0
-            let speed = Double(count)/(current-time)
+            let speed = (current-time)/1000
             self?.delegate?.speed(count: count, time: speed)
             if let completion = req.response { completion(response) }
         }
@@ -63,7 +63,7 @@ open class Network: NSObject {
                     let current = CFAbsoluteTimeGetCurrent()
                     guard let response = beautifier(data, resp, error) else { return }
                     let count = response.data?.count ?? 0
-                    let speed = Double(count)/(current-time)
+                    let speed = (current-time)/1000
                     self?.delegate?.speed(count: count, time: speed)
                     if let completion = req.response { completion(response) }
                 }
