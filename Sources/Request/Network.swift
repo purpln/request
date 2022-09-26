@@ -6,7 +6,7 @@ public protocol NetworkProtocol {
     func speed(value: Double)
 }
 
-extension NetworkProtocol {
+public extension NetworkProtocol {
     func progress(value: Double) { }
     func location(value: URL) { }
     func speed(value: Double) { }
@@ -15,7 +15,7 @@ extension NetworkProtocol {
 open class Network: NSObject {
     public static var shared = Network()
     
-    open var timeout: Double = 10
+    open var timeout: Double = 60
     
     open var config: URLSessionConfiguration {
         let config = URLSessionConfiguration.default
