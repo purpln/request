@@ -3,13 +3,13 @@ import Foundation
 public protocol NetworkProtocol {
     func progress(value: Double)
     func location(value: URL)
-    func speed(value: Double)
+    func speed(count: Int, time: Double)
 }
 
 public extension NetworkProtocol {
     func progress(value: Double) { }
     func location(value: URL) { }
-    func speed(value: Double) { }
+    func speed(count: Int, time: Double) { }
 }
 
 open class Network: NSObject {
@@ -36,7 +36,7 @@ open class Network: NSObject {
             guard let response = beautifier(data, resp, error) else { return }
             let count = response.data?.count ?? 0
             let speed = Double(count)/(current-time)
-            self?.delegate?.speed(value: speed)
+            self?.delegate?.speed(count: count, time: speed)
             if let completion = req.response { completion(response) }
         }
         
@@ -64,7 +64,7 @@ open class Network: NSObject {
                     guard let response = beautifier(data, resp, error) else { return }
                     let count = response.data?.count ?? 0
                     let speed = Double(count)/(current-time)
-                    self?.delegate?.speed(value: speed)
+                    self?.delegate?.speed(count: count, time: speed)
                     if let completion = req.response { completion(response) }
                 }
                 task.resume()
