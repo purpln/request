@@ -3,43 +3,40 @@ import Foundation
 public protocol NetworkProtocol {
     func progress(value: Double)
     func location(value: URL)
+    func speed(value: Double)
 }
 
 extension NetworkProtocol {
     func progress(value: Double) { }
     func location(value: URL) { }
+    func speed(value: Double) { }
 }
 
 open class Network: NSObject {
-    private class func response(_ data: Data?, _ resp: URLResponse?, _ error: Error?) -> Response? {
-        guard let resp = resp as? HTTPURLResponse else { return nil }
-        var response = Response(code: resp.statusCode)
-        if let data = data { response.data = [UInt8](data) }
-        response.headers = resp.allHeaderFields.reduce(into: [String:Any](), { $0[String(describing: $1.key)] = $1.value })
-        if response.headers.count != resp.allHeaderFields.count {
-            print("network error parsing headers")
-            print(response.headers)
-            print(resp.allHeaderFields)
-        }
-        return response
-    }
+    public static var shared = Network()
     
-    private static var config: URLSessionConfiguration {
+    open var timeout: Double = 10
+    
+    open var config: URLSessionConfiguration {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = timeout
         config.timeoutIntervalForResource = timeout
         return config
     }
     
-    public static var shared = Network()
-    open var delegate: NetworkProtocol?
-    public static var timeout: Double = 30
-    
-    @discardableResult open
-    class func load(req: Request) -> URLSessionDataTask? {
+    @discardableResult
+    open func load(req: Request) -> URLSessionDataTask? {
+        let beautifier: (Data?, URLResponse?, Error?) -> Response? = response
+        
         guard let request = req.request else { return nil }
-        let task = URLSession(configuration: config).dataTask(with: request) { data, resp, error in
-            guard let response = response(data, resp, error) else { return }
+        let time = CFAbsoluteTimeGetCurrent()
+        
+        let task = URLSession(configuration: config).dataTask(with: request) { [weak self] data, resp, error in
+            let current = CFAbsoluteTimeGetCurrent()
+            guard let response = beautifier(data, resp, error) else { return }
+            let count = response.data?.count ?? 0
+            let speed = Double(count)/(current-time)
+            self?.delegate?.speed(value: speed)
             if let completion = req.response { completion(response) }
         }
         
@@ -47,17 +44,28 @@ open class Network: NSObject {
         return task
     }
     
-    open class func load(reqs: [Request], _ closure: (() -> Void)? = nil) {
-        let group = DispatchGroup()
+    open func load(reqs: [Request], pause: Double = 0, _ closure: (() -> Void)? = nil) {
+        let beautifier: (Data?, URLResponse?, Error?) -> Response? = response
         
+        let group = DispatchGroup()
         DispatchQueue.global(qos: .background).async {
             for req in reqs {
-                guard let request = req.request else { return }
                 group.enter()
-                let task = URLSession(configuration: config).dataTask(with: request) { data, resp, error in
-                    guard let response = response(data, resp, error) else { return }
+                guard let request = req.request else { return }
+                let time = CFAbsoluteTimeGetCurrent()
+                
+                let task = URLSession.shared.dataTask(with: request) { [weak self] data, resp, error in
+                    defer {
+                        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now()+pause) {
+                            group.leave()
+                        }
+                    }
+                    let current = CFAbsoluteTimeGetCurrent()
+                    guard let response = beautifier(data, resp, error) else { return }
+                    let count = response.data?.count ?? 0
+                    let speed = Double(count)/(current-time)
+                    self?.delegate?.speed(value: speed)
                     if let completion = req.response { completion(response) }
-                    group.leave()
                 }
                 task.resume()
                 group.wait()
@@ -68,54 +76,34 @@ open class Network: NSObject {
         }
     }
     
-    open class func queue(reqs: [(name: String, req: Request)],
-                          next: (((name: String, req: Request)) -> (name: String, req: Request))? = nil,
-                          closure: (() -> Void)? = nil) {
-        let group = DispatchGroup()
-        
-        DispatchQueue.global(qos: .background).async {
-            var reqs = reqs
-            for i in 0..<reqs.count {
-                guard let request = reqs[i].req.request else { continue }
-                group.enter()
-                let task = URLSession(configuration: config).dataTask(with: request) { data, resp, error in
-                    guard let response = response(data, resp, error) else { return }
-                    if let completion = reqs[i].req.response { completion(response) }
-                    if i+1 < reqs.count, let req = next?(reqs[i+1]) { reqs[i+1] = req }
-                    group.leave()
-                }
-                task.resume()
-                group.wait()
-            }
-            group.notify(queue: .main) {
-                closure?()
-            }
-        }
-    }
-}
-
-extension Network {
-    @discardableResult open
-    func download(req: Request) -> URLSessionDownloadTask? {
-        guard let request = req.request else { return nil  }
-        let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-        let task = session.downloadTask(with: request) { data, resp, error in
-            guard let resp = resp as? HTTPURLResponse else { return }
+    open var response: (Data?, URLResponse?, Error?) -> Response? = { data, resp, error in
+        if let _ = error as? URLError {
+            return nil
+        } else if let resp = resp as? HTTPURLResponse {
             var response = Response(code: resp.statusCode)
-            if let url = data?.absoluteString { response.data = [UInt8](url.utf8) }
+            if let data = data { response.data = [UInt8](data) }
             response.headers = resp.allHeaderFields.reduce(into: [String:Any](), { $0[String(describing: $1.key)] = $1.value })
-            
             if response.headers.count != resp.allHeaderFields.count {
                 print("network error parsing headers")
                 print(response.headers)
                 print(resp.allHeaderFields)
             }
-            
-            if let completion = req.response { completion(response) }
+            return response
         }
-        
-        task.resume()
-        return task
+        return nil
+    }
+    
+    open var delegate: NetworkProtocol?
+}
+
+extension Network {
+    @discardableResult public
+    class func load(req: Request) -> URLSessionDataTask? {
+        shared.load(req: req)
+    }
+    
+    public class func load(reqs: [Request], _ closure: (() -> Void)? = nil) {
+        shared.load(reqs: reqs, closure)
     }
 }
 
