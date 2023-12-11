@@ -36,7 +36,7 @@ public extension Request {
 extension Request {
     public func load() async throws -> Response { try await Network.shared.load(req: self) }
     
-    public func download() async throws { try await Network.shared.download(request: <#T##URLRequest#>, destination: <#T##URL#>) }
+    public func load(to link: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws { try await Network.shared.load(req: self, to: link, progress: progress) }
 }
 
 public class Network: NSObject {
@@ -76,7 +76,7 @@ extension Network {
 }
 
 extension Network {
-    public func load(req: Request, to destination: Linkage) async throws {
+    public func load(req: Request, to destination: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws {
         let request = try req.request()
         guard let path = destination.string, let url = URL(string: path) else { throw NetworkError.foundationUrl }
         await download(request: request, destination: url)
