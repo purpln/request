@@ -17,6 +17,17 @@ public struct Request {
 }
 
 public extension Request {
+    func form(_ dictionary: [String: String]) -> Self {
+        var request = self
+        let string = dictionary
+            .reduce(into: [String]()) { array, element in array.append("\(element.key)=\(element.value)") }
+            .joined(separator: "&")
+        request.body = .bytes([UInt8](string.utf8))
+        return request
+    }
+}
+
+public extension Request {
     func file(_ bytes: [UInt8], boundary: String) -> Self {
         var request = self
         request.headers.append(key: "Content-Type", value: "multipart/form-data; boundary=\(boundary)")
