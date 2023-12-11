@@ -36,7 +36,7 @@ public extension Request {
 extension Request {
     public func load() async throws -> Response { try await Network.shared.load(req: self) }
     
-    public func load(to link: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws { try await Network.shared.load(req: self, to: link, progress: progress) }
+    public func load(to link: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Bool { try await Network.shared.load(req: self, to: link, progress: progress) }
 }
 
 public class Network: NSObject {
@@ -76,18 +76,18 @@ extension Network {
 }
 
 extension Network {
-    public func load(req: Request, to destination: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws {
+    public func load(req: Request, to destination: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Bool {
         let request = try req.request()
         guard let path = destination.string, let url = URL(string: path) else { throw NetworkError.foundationUrl }
-        await download(request: request, destination: url)
+        return try await download(request: request, destination: url)
     }
 }
 
 extension Network {
-    public func download(request: URLRequest, destination url: URL, progress: @escaping (Float) -> Void = { _ in }) async {
+    public func download(request: URLRequest, destination url: URL, progress: @escaping (Float) -> Void = { _ in }) async throws -> Bool {
         return await withCheckedContinuation { continuation in
             let delegate = DownloadDelegate(destination: url, progress: progress) { bool in
-                continuation.resume(returning: ())
+                continuation.resume(returning: bool)
             }
             URLSession(configuration: .default, delegate: delegate, delegateQueue: OperationQueue())
                 .downloadTask(with: request) { data, urlresponse, error in }
