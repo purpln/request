@@ -36,7 +36,7 @@ public extension Request {
 extension Request {
     public func load() async throws -> Response { try await Network.shared.load(req: self) }
     
-    public func load(to link: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Bool { try await Network.shared.load(req: self, to: link, progress: progress) }
+    public func load(to link: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Response { try await Network.shared.load(req: self, to: link, progress: progress) }
 }
 
 public class Network: NSObject {
@@ -64,33 +64,39 @@ public class Network: NSObject {
 extension Network {
     public func load(req: Request) async throws -> Response {
         let request = try req.request()
-        let (resp, data) = await task(request: request)
-        guard let resp, let data else { throw NetworkError.invalidResponse }
+        let (response, data) = await task(request: request)
+        guard let response, let data else { throw NetworkError.invalidResponse }
         
-        let headers = resp.allHeaderFields.reduce(into: [(String, String)]()) { array, element in
+        let headers = response.allHeaderFields.reduce(into: [(String, String)]()) { array, element in
             array.append((String(describing: element.key), String(describing: element.value)))
         }
         
-        return Response(status: .init(statusCode: resp.statusCode), headers: .init(headers: headers), body: .bytes([UInt8](data)))
+        return Response(status: .init(statusCode: response.statusCode), headers: .init(headers: headers), body: .bytes([UInt8](data)))
     }
 }
 
 extension Network {
-    public func load(req: Request, to destination: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Bool {
+    public func load(req: Request, to destination: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Response {
         let request = try req.request()
         guard let path = destination.string, let url = URL(string: path) else { throw NetworkError.foundationUrl }
-        return try await download(request: request, destination: url)
+        guard let response = try await download(request: request, destination: url) else {
+            throw NetworkError.invalidResponse
+        }
+        let headers = response.allHeaderFields.reduce(into: [(String, String)]()) { array, element in
+            array.append((String(describing: element.key), String(describing: element.value)))
+        }
+        return Response(status: .init(statusCode: response.statusCode), headers: .init(headers: headers), body: .none)
     }
 }
 
 extension Network {
-    public func download(request: URLRequest, destination url: URL, progress: @escaping (Float) -> Void = { _ in }) async throws -> Bool {
+    public func download(request: URLRequest, destination url: URL, progress: @escaping (Float) -> Void = { _ in }) async throws -> HTTPURLResponse? {
         return await withCheckedContinuation { continuation in
-            let delegate = DownloadDelegate(destination: url, progress: progress) { bool in
-                continuation.resume(returning: bool)
+            let delegate = DownloadDelegate(destination: url, progress: progress) { response in
+                continuation.resume(returning: response)
             }
             URLSession(configuration: .default, delegate: delegate, delegateQueue: OperationQueue())
-                .downloadTask(with: request) { data, urlresponse, error in }
+                .downloadTask(with: request)
                 .resume()
         }
     }
@@ -99,38 +105,26 @@ extension Network {
 class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
     var destination: URL!
     var progress: (Float) -> Void = { _ in }
-    var end: (Bool) -> Void = { _ in }
+    var response: (HTTPURLResponse?) -> Void = { _ in }
     
-    init(destination: URL, progress: @escaping (Float) -> Void = { _ in }, end: @escaping (Bool) -> Void) {
+    init(destination: URL, progress: @escaping (Float) -> Void = { _ in }, response: @escaping (HTTPURLResponse?) -> Void) {
         super.init()
         self.destination = destination
-        self.end = end
         self.progress = progress
+        self.response = response
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        completed(false, session)
+        response(nil)
     }
     
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        guard downloadTask.response != nil else {
-            completed(false, session)
-            return
-        }
-        completed(true, session)
-    }
-    
-    func completed(_ completed: Bool, _ session: URLSession) {
-        end(completed)
-        end = { _ in }
-        session.finishTasksAndInvalidate()
+        response(downloadTask.response as? HTTPURLResponse)
     }
     
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         progress(Float(totalBytesWritten) / Float(totalBytesExpectedToWrite))
     }
-    
-    
 }
 
 public enum NetworkError: Error {
