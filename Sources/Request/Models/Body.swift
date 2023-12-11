@@ -1,4 +1,4 @@
-public enum Body: Sendable {
+public enum Body: Codable, Sendable, Equatable {
     case none
     case bytes([UInt8])
 }

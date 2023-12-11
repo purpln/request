@@ -1,4 +1,4 @@
-public enum Method: String, Codable, Sendable {
+public enum Method: String, Codable, Sendable, Equatable {
     case get = "GET"
     case post = "POST"
     case head = "HEAD"

@@ -1,4 +1,4 @@
-public enum Status: Sendable, Codable {
+public enum Status: Codable, Sendable, Equatable {
     case custom(code: UInt, reasonPhrase: String)
     
     // 1xx
