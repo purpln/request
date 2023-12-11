@@ -1,9 +1,13 @@
 import class Foundation.JSONEncoder
 import class Foundation.JSONDecoder
 import class Foundation.NSObject
-import class Foundation.URLSessionConfiguration
-import class Foundation.HTTPURLResponse
+import class Foundation.OperationQueue
 import class Foundation.URLSession
+import class Foundation.HTTPURLResponse
+import class Foundation.URLSessionTask
+import class Foundation.URLSessionConfiguration
+import class Foundation.URLSessionDownloadTask
+import protocol Foundation.URLSessionDownloadDelegate
 import struct Foundation.URLRequest
 import struct Foundation.URL
 import struct Foundation.Data
@@ -31,6 +35,8 @@ public extension Request {
 
 extension Request {
     public func load() async throws -> Response { try await Network.shared.load(req: self) }
+    
+    public func download() async throws { try await Network.shared.download(request: <#T##URLRequest#>, destination: <#T##URL#>) }
 }
 
 public class Network: NSObject {
@@ -55,14 +61,6 @@ public class Network: NSObject {
     }
 }
 
-public enum NetworkError: Error {
-    case invalidLink
-    case invalidRequest
-    case invalidResponse
-    case foundationUrl
-    case emptyBody
-}
-
 extension Network {
     public func load(req: Request) async throws -> Response {
         let request = try req.request()
@@ -75,6 +73,72 @@ extension Network {
         
         return Response(status: .init(statusCode: resp.statusCode), headers: .init(headers: headers), body: .bytes([UInt8](data)))
     }
+}
+
+extension Network {
+    public func load(req: Request, to destination: Linkage) async throws {
+        let request = try req.request()
+        guard let path = destination.string, let url = URL(string: path) else { throw NetworkError.foundationUrl }
+        await download(request: request, destination: url)
+    }
+}
+
+extension Network {
+    public func download(request: URLRequest, destination url: URL, progress: @escaping (Float) -> Void = { _ in }) async {
+        return await withCheckedContinuation { continuation in
+            let delegate = DownloadDelegate(destination: url, progress: progress) { bool in
+                continuation.resume(returning: ())
+            }
+            URLSession(configuration: .default, delegate: delegate, delegateQueue: OperationQueue())
+                .downloadTask(with: request) { data, urlresponse, error in }
+                .resume()
+        }
+    }
+}
+
+class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+    var destination: URL!
+    var progress: (Float) -> Void = { _ in }
+    var end: (Bool) -> Void = { _ in }
+    
+    init(destination: URL, progress: @escaping (Float) -> Void = { _ in }, end: @escaping (Bool) -> Void) {
+        super.init()
+        self.destination = destination
+        self.end = end
+        self.progress = progress
+    }
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        completed(false, session)
+    }
+    
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        guard downloadTask.response != nil else {
+            completed(false, session)
+            return
+        }
+        completed(true, session)
+    }
+    
+    func completed(_ completed: Bool, _ session: URLSession) {
+        end(completed)
+        end = { _ in }
+        session.finishTasksAndInvalidate()
+    }
+    
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        progress(Float(totalBytesWritten) / Float(totalBytesExpectedToWrite))
+    }
+    
+    
+}
+
+public enum NetworkError: Error {
+    case invalidLink
+    case invalidRequest
+    case invalidResponse
+    case foundationUrl
+    case emptyBody
 }
 
 extension Request {
