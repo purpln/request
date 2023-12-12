@@ -2,6 +2,7 @@ import class Foundation.JSONEncoder
 import class Foundation.JSONDecoder
 import class Foundation.NSObject
 import class Foundation.OperationQueue
+import class Foundation.FileManager
 import class Foundation.URLSession
 import class Foundation.HTTPURLResponse
 import class Foundation.URLSessionTask
