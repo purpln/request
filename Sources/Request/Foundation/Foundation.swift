@@ -120,6 +120,13 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
     }
     
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        let url = URL(fileURLWithPath: destination.path)
+        try? FileManager.default.removeItem(atPath: url.path)
+        
+        let at = URL(fileURLWithPath: location.path)
+        let to = URL(fileURLWithPath: destination.path)
+        try? FileManager.default.moveItem(at: at, to: to)
+        
         response(downloadTask.response as? HTTPURLResponse)
         response = { _ in }
     }
