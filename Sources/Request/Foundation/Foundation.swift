@@ -147,11 +147,6 @@ public enum NetworkError: Error {
 extension Request {
     public func request() throws -> URLRequest {
         guard var url = link.string else { throw NetworkError.invalidLink }
-        
-        if let new = url.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed) {
-            url = new.replacingOccurrences(of: "+", with: "%2B")
-        }
-        
         guard let link = URL(string: url) else { throw NetworkError.foundationUrl }
         var request = URLRequest(url: link)
         
