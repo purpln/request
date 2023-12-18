@@ -12,6 +12,9 @@ import protocol Foundation.URLSessionDownloadDelegate
 import struct Foundation.URLRequest
 import struct Foundation.URL
 import struct Foundation.Data
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public extension Response {
     static var decoder = JSONDecoder()
