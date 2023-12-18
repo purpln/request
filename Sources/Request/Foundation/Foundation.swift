@@ -1,17 +1,6 @@
-import class Foundation.JSONEncoder
-import class Foundation.JSONDecoder
-import class Foundation.NSObject
-import class Foundation.OperationQueue
-import class Foundation.FileManager
-import class Foundation.URLSession
-import class Foundation.HTTPURLResponse
-import class Foundation.URLSessionTask
-import class Foundation.URLSessionConfiguration
-import class Foundation.URLSessionDownloadTask
-import protocol Foundation.URLSessionDownloadDelegate
-import struct Foundation.URLRequest
-import struct Foundation.URL
-import struct Foundation.Data
+#if canImport(Foundation)
+import Foundation
+#endif
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
