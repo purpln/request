@@ -44,10 +44,26 @@ public class Network: NSObject {
         return config
     }
     
-    func task(request: URLRequest) async -> (HTTPURLResponse?, Data?) {
-        return await withCheckedContinuation { continuation in
+    func task(request: URLRequest) async throws -> (HTTPURLResponse, Data) {
+        return try await withCheckedThrowingContinuation { continuation in
             let task = URLSession(configuration: config).dataTask(with: request) { data, urlresponse, error in
-                continuation.resume(returning: (urlresponse as? HTTPURLResponse, data))
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let urlresponse else {
+                    continuation.resume(throwing: NetworkError.emptyResponse)
+                    return
+                }
+                guard let data else {
+                    continuation.resume(throwing: NetworkError.emptyBody)
+                    return
+                }
+                guard let response = urlresponse as? HTTPURLResponse else {
+                    continuation.resume(throwing: NetworkError.invalidResponse)
+                    return
+                }
+                continuation.resume(returning: (response, data))
             }
             task.resume()
         }
@@ -57,8 +73,7 @@ public class Network: NSObject {
 extension Network {
     public func load(req: Request) async throws -> Response {
         let request = try req.request()
-        let (response, data) = await task(request: request)
-        guard let response, let data else { throw NetworkError.invalidResponse }
+        let (response, data) = try await task(request: request)
         
         let headers = response.allHeaderFields.reduce(into: [(String, String)]()) { array, element in
             array.append((String(describing: element.key), String(describing: element.value)))
@@ -137,6 +152,7 @@ public enum NetworkError: Error {
     case invalidRequest
     case invalidResponse
     case foundationUrl
+    case emptyResponse
     case emptyBody
 }
 
