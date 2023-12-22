@@ -72,9 +72,7 @@ extension Network {
     public func load(req: Request, to destination: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Response {
         let request = try req.request()
         guard let path = destination.string, let url = URL(string: path) else { throw NetworkError.foundationUrl }
-        guard let response = try await download(request: request, destination: url) else {
-            throw NetworkError.invalidResponse
-        }
+        let response = try await download(request: request, destination: url)
         let headers = response.allHeaderFields.reduce(into: [(String, String)]()) { array, element in
             array.append((String(describing: element.key), String(describing: element.value)))
         }
@@ -83,9 +81,10 @@ extension Network {
 }
 
 extension Network {
-    public func download(request: URLRequest, destination url: URL, progress: @escaping (Float) -> Void = { _ in }) async throws -> HTTPURLResponse? {
-        return await withCheckedContinuation { continuation in
+    public func download(request: URLRequest, destination url: URL, progress: @escaping (Float) -> Void = { _ in }) async throws -> HTTPURLResponse {
+        return try await withCheckedThrowingContinuation { continuation in
             let delegate = DownloadDelegate(destination: url, progress: progress) { response in
+                guard let response else { continuation.resume(throwing: NetworkError.invalidResponse); return }
                 continuation.resume(returning: response)
             }
             URLSession(configuration: .default, delegate: delegate, delegateQueue: OperationQueue())
@@ -108,8 +107,12 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        response(nil)
-        response = { _ in }
+        print("network error:", error ?? "error - nil")
+        Task {
+            try await Task.sleep(nanoseconds: 1000)
+            response(nil)
+            response = { _ in }
+        }
     }
     
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
