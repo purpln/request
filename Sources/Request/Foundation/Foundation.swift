@@ -60,7 +60,7 @@ public class Network: NSObject {
                     return
                 }
                 guard let response = urlresponse as? HTTPURLResponse else {
-                    continuation.resume(throwing: NetworkError.invalidResponse)
+                    continuation.resume(throwing: NetworkError.invalidResponse(urlresponse))
                     return
                 }
                 continuation.resume(returning: (response, data))
@@ -98,8 +98,15 @@ extension Network {
 extension Network {
     public func download(request: URLRequest, destination url: URL, progress: @escaping (Float) -> Void = { _ in }) async throws -> HTTPURLResponse {
         return try await withCheckedThrowingContinuation { continuation in
-            let delegate = DownloadDelegate(destination: url, progress: progress) { response in
-                guard let response else { continuation.resume(throwing: NetworkError.invalidResponse); return }
+            let delegate = DownloadDelegate(destination: url, progress: progress) { urlresponse in
+                guard let urlresponse else {
+                    continuation.resume(throwing: NetworkError.emptyResponse)
+                    return
+                }
+                guard let response = urlresponse as? HTTPURLResponse else {
+                    continuation.resume(throwing: NetworkError.invalidResponse(urlresponse))
+                    return
+                }
                 continuation.resume(returning: response)
             }
             URLSession(configuration: .default, delegate: delegate, delegateQueue: OperationQueue())
@@ -112,9 +119,9 @@ extension Network {
 class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
     var destination: URL!
     var progress: (Float) -> Void = { _ in }
-    var response: (HTTPURLResponse?) -> Void = { _ in }
+    var response: (URLResponse?) -> Void = { _ in }
     
-    init(destination: URL, progress: @escaping (Float) -> Void = { _ in }, response: @escaping (HTTPURLResponse?) -> Void) {
+    init(destination: URL, progress: @escaping (Float) -> Void = { _ in }, response: @escaping (URLResponse?) -> Void) {
         super.init()
         self.destination = destination
         self.progress = progress
@@ -138,7 +145,7 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
         let to = URL(fileURLWithPath: destination.path)
         try? FileManager.default.moveItem(at: at, to: to)
         
-        response(downloadTask.response as? HTTPURLResponse)
+        response(downloadTask.response)
         response = { _ in }
     }
     
@@ -150,7 +157,7 @@ class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
 public enum NetworkError: Error {
     case invalidLink
     case invalidRequest
-    case invalidResponse
+    case invalidResponse(URLResponse)
     case foundationUrl
     case emptyResponse
     case emptyBody
@@ -158,7 +165,7 @@ public enum NetworkError: Error {
 
 extension Request {
     public func request() throws -> URLRequest {
-        guard var url = link.string else { throw NetworkError.invalidLink }
+        guard let url = link.string else { throw NetworkError.invalidLink }
         guard let link = URL(string: url) else { throw NetworkError.foundationUrl }
         var request = URLRequest(url: link)
         
