@@ -33,9 +33,13 @@ extension Request {
 }
 
 public class Network: NSObject {
-    public static var shared = Network()
+    public static var shared = Network(timeout: 30)
     
-    private var timeout: Double = 60
+    public var timeout: Double = 60
+    
+    public init(timeout: Double) {
+        self.timeout = timeout
+    }
     
     var config: URLSessionConfiguration {
         let config = URLSessionConfiguration.default
@@ -45,7 +49,7 @@ public class Network: NSObject {
     }
     
     func task(request: URLRequest) async throws -> (HTTPURLResponse, Data) {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             let task = URLSession(configuration: config).dataTask(with: request) { data, urlresponse, error in
                 if let error {
                     continuation.resume(throwing: error)
