@@ -162,6 +162,7 @@ public enum NetworkError: Error {
     case invalidLink
     case invalidRequest
     case invalidResponse(URLResponse)
+    case nsErrorDomain(String)
     case foundationUrl
     case emptyResponse
     case emptyBody
