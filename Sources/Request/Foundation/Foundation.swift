@@ -168,6 +168,21 @@ public enum NetworkError: Error {
     case emptyBody
 }
 
+
+extension NetworkError: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .invalidLink: return "[Network] Invalid link"
+        case .invalidRequest: return "[Network] Invalid request"
+        case .invalidResponse(_): return "[Network] Invalid response"
+        case .nsErrorDomain(let string): return "[Network] Network error \(string)"
+        case .foundationUrl: return "[Network] Incorrect foundation url"
+        case .emptyResponse: return "[Network] Empty response"
+        case .emptyBody: return "[Network] Empty body"
+        }
+    }
+}
+
 extension Request {
     public func request() throws -> URLRequest {
         guard let url = link.string else { throw NetworkError.invalidLink }
