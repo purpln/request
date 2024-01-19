@@ -27,9 +27,17 @@ public extension Request {
 }
 
 extension Request {
-    public func load() async throws -> Response { try await Network.shared.load(req: self) }
+    public func load() async throws -> Response {
+        #if os(Linux)
+        try await task(request: self)
+        #else
+        try await Network.shared.load(req: self)
+        #endif
+    }
     
-    public func load(to link: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Response { try await Network.shared.load(req: self, to: link, progress: progress) }
+    public func load(to link: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Response {
+        try await Network.shared.load(req: self, to: link, progress: progress)
+    }
 }
 
 public class Network: NSObject {
@@ -200,3 +208,30 @@ extension Request {
         return request
     }
 }
+
+#if os(Linux)
+
+import AsyncHTTPClient
+
+func task(request req: Request) async throws -> Response {
+    let client = HTTPClient(eventLoopGroupProvider: .singleton)
+    var request = HTTPClientRequest(url: req.link.description)
+    request.method = .init(rawValue: req.method.rawValue)
+    request.headers = .init(req.headers.headers)
+    if case .bytes(let bytes) = req.body {
+        request.body = .bytes(bytes, length: .known(bytes.count))
+    }
+    let response = try await client.execute(request, timeout: .seconds(30))
+    let status = Status(statusCode: Int(response.status.code))
+    let headers = Headers(headers: response.headers.reduce(into: [(String, String)](), { $0.append(($1.name, $1.value)) }))
+    var buffer = try await response.body.collect(upTo: 1024 * 1024)
+    let body: Body
+    if let bytes = buffer.readBytes(length: buffer.readableBytes) {
+        body = .bytes(bytes)
+    } else {
+        body = .none
+    }
+    return Response(status: status, headers: headers, body: body)
+}
+
+#endif
