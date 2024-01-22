@@ -134,6 +134,8 @@ extension Network {
             array.append((String(describing: element.key), String(describing: element.value)))
         }
         
+        print("[request]", "status:", response.statusCode, "-", req.link)
+        
         return Response(status: .init(statusCode: response.statusCode), headers: .init(headers: headers), body: .bytes([UInt8](data)))
     }
 }
@@ -141,11 +143,16 @@ extension Network {
 extension Network {
     public func load(req: Request, to destination: Linkage, progress: @escaping (Float) -> Void = { _ in }) async throws -> Response {
         let request = try req.request()
+        
         guard let path = destination.string, let url = URL(string: path) else { throw NetworkError.foundationUrl }
         let response = try await download(request: request, destination: url)
+        
         let headers = response.allHeaderFields.reduce(into: [(String, String)]()) { array, element in
             array.append((String(describing: element.key), String(describing: element.value)))
         }
+        
+        print("[request]", "status:", response.statusCode, "-", req.link)
+        
         return Response(status: .init(statusCode: response.statusCode), headers: .init(headers: headers), body: .none)
     }
 }
