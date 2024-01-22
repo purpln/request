@@ -49,10 +49,53 @@ public class Network: NSObject {
         self.timeout = timeout
     }
     
+    public static let userAgent: String = {
+        let info = Bundle.main.infoDictionary
+        let executable = (info?["CFBundleExecutable"] as? String) ??
+        (ProcessInfo.processInfo.arguments.first?.split(separator: "/").last.map(String.init)) ??
+        "Unknown"
+        let bundle = info?["CFBundleIdentifier"] as? String ?? "Unknown"
+        let appVersion = info?["CFBundleShortVersionString"] as? String ?? "Unknown"
+        let appBuild = info?["CFBundleVersion"] as? String ?? "Unknown"
+        
+        let osNameVersion: String = {
+            let version = ProcessInfo.processInfo.operatingSystemVersion
+            let versionString = "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
+            let osName: String = {
+#if os(iOS)
+#if targetEnvironment(macCatalyst)
+                return "macOS(Catalyst)"
+#else
+                return "iOS"
+#endif
+#elseif os(watchOS)
+                return "watchOS"
+#elseif os(tvOS)
+                return "tvOS"
+#elseif os(macOS)
+                return "macOS"
+#elseif os(Linux)
+                return "Linux"
+#elseif os(Windows)
+                return "Windows"
+#elseif os(Android)
+                return "Android"
+#else
+                return "Unknown"
+#endif
+            }()
+            
+            return "\(osName) \(versionString)"
+        }()
+        
+        return "\(executable)/\(appVersion) (\(bundle); build:\(appBuild); \(osNameVersion))"
+    }()
+    
     var config: URLSessionConfiguration {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = timeout
         config.timeoutIntervalForResource = timeout
+        config.httpAdditionalHeaders = ["User-Agent":"\(Network.userAgent)"]
         return config
     }
     
